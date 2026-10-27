@@ -104,7 +104,7 @@ function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function today(){return iso(new Date());}
 function fyOf(d){var y=+d.slice(0,4),m=+d.slice(5,7);return String(m>=4?y:y-1);}
 function fyLabel(y){return 'FY '+y+'\u2013'+String(+y+1).slice(2);}
-var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',allY=false,sid=null,TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
+var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',allY=false,allS=false,sid=null,TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
 var CUR=['INR','USD','EUR','GBP','AED','SGD','AUD','CAD','JPY'];
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function mname(m){return new Date(+m.slice(0,4),+m.slice(5)-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});}
@@ -116,7 +116,7 @@ function find(id){return S.tx.filter(function(t){return t.id===id;})[0];}
 function rows(l){return '<table class="tl">'+l.map(function(t){var d=new Date(+t.date.slice(0,4),+t.date.slice(5,7)-1,+t.date.slice(8));
  return '<tr data-i="'+t.id+'" data-d="'+t.date+'"><td>'+(+t.date.slice(8))+'<small>'+d.toLocaleDateString(undefined,{month:'short'})+'</small></td><td>'+(esc(t.desc)||'<span class="cc" style="color:var(--mut)">—</span>')+'<small>'+TL[t.type]+(t.type==='c'?'':' · Debit')+'</small></td><td class="a c'+t.type+'">'+(t.type==='c'?'+ ':'− ')+fm(t.cur,Math.round(t.amt*100))+'</td></tr>';}).join('')+'</table>';}
 function render(){
- $('dl').textContent=tab===1?mname(ym):(tab===3&&allY?'All years':fyLabel(yr));
+ $('dl').textContent=tab===1?mname(ym):((tab===3&&allY)||(tab===4&&allS)?'All years':fyLabel(yr));
  ['v1','v2','v3','v4'].forEach(function(v,i){$(v).hidden=tab!==i+1;});[1,2,3,4].forEach(function(n){$('t'+n).className=tab===n?'on':'';});
  if(tab===1){var l=srt(S.tx.filter(function(t){return t.date.slice(0,7)===ym;})),s=sums(l);$('pill').textContent=l.length+' entries';
   var h=Object.keys(s).sort().map(function(c){var a=s[c],db=a.e+a.t;return '<div class="card"><h3>'+c+' · '+mname(ym)+'</h3><table class="st"><tr><td>Credits</td><td class="cc">+ '+fm(c,a.c)+'</td></tr><tr><td>Expenses</td><td class="ce">− '+fm(c,a.e)+'</td></tr><tr><td>Transferred</td><td class="ct">− '+fm(c,a.t)+'</td></tr><tr><td>Total debits</td><td>− '+fm(c,db)+'</td></tr><tr><td><b>Net</b></td><td class="'+(a.c-db>=0?'cc':'ce')+'">'+fm(c,a.c-db)+'</td></tr></table></div>';}).join('');
@@ -130,11 +130,11 @@ function render(){
    var tn=tot.c-tot.e-tot.t;
    return '<div class="card"><h3>'+c+' \u00b7 '+fl+'</h3><div class="yw"><table class="yt"><tr><th>Month</th><th>Cr</th><th>Dr</th><th>Tr</th><th>Net</th></tr>'+b+'<tr class="tot"><td>Total</td><td class="cc">'+f(tot.c)+'</td><td class="ce">'+f(tot.e)+'</td><td class="ct">'+f(tot.t)+'</td><td class="'+(tn>=0?'cc':'ce')+'">'+f(tn)+'</td></tr></table></div><div class="lgd">Cr = Credit &nbsp;\u00b7&nbsp; Dr = Expense &nbsp;\u00b7&nbsp; Tr = Transferred &nbsp;\u00b7&nbsp; Net = Cr \u2212 Dr \u2212 Tr</div></div>';}).join('');
   $('v2').innerHTML=(h2||'<div class="card empty">No transactions in '+fl+'.</div>')+'<div class="card"><h3>Data</h3><div class="btns"><button class="gh" id="bk">Backup</button><button class="gh" id="rst">Restore</button></div></div>';}
- else if(tab===4){var lo=dn(yr+'-04-01'),hi=dn((+yr+1)+'-03-31'),fa=yr+'-04-01',fb=(+yr+1)+'-03-31',fy=seaDays(lo,hi),fl=fyLabel(yr),fls=fyList();if(fls.indexOf(yr)<0){fls.push(yr);fls.sort(function(a,b){return b-a;});}
-  var ls=S.sea.filter(function(c){return c.on<=fb&&(c.off||today())>=fa;}).sort(function(a,b){return a.on<b.on?1:a.on>b.on?-1:0;});$('pill').textContent=ls.length+' contracts';
+ else if(tab===4){var lo=allS?-1e9:dn(yr+'-04-01'),hi=allS?1e9:dn((+yr+1)+'-03-31'),fa=yr+'-04-01',fb=(+yr+1)+'-03-31',fy=seaDays(lo,hi),fl=allS?'All years':fyLabel(yr);
+  var ls=S.sea.filter(function(c){return allS||(c.on<=fb&&(c.off||today())>=fa);}).sort(function(a,b){return a.on<b.on?1:a.on>b.on?-1:0;});$('pill').textContent=ls.length+' contracts';
   var rw=ls.map(function(c){var tot=seaDays(-1e9,1e9,[c]),f=seaDays(lo,hi,[c]);
    return '<tr data-s="'+c.id+'"><td><b>'+esc(c.v||'Sea contract')+'</b><small>'+fd(c.on)+' \u2192 '+(c.off?fd(c.off):'on board')+'</small>'+((c.pon||c.poff)?'<small>'+esc(c.pon||'\u2014')+' \u2192 '+esc(c.poff||'\u2014')+'</small>':'')+'</td><td>'+f+' d'+(f!==tot?'<small>of '+tot+' d total</small>':'')+'</td></tr>';}).join('');
-  $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><label class="lb" for="sfy">Sea service for year</label><select id="sfy">'+fls.map(function(y){return '<option value="'+y+'"'+(y===yr?' selected':'')+'>'+fyLabel(y)+'</option>';}).join('')+'</select><button class="pri" id="rpg" style="width:100%">📄 Report · Print / PDF</button></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea service in '+fl+'.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
+  $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><div class="sl">'+fl+'</div><div class="seg" style="margin:12px 0 10px"><button style="flex:1" data-sv="fy" class="'+(allS?'':'on')+'">By year</button><button style="flex:1" data-sv="all" class="'+(allS?'on':'')+'">All years</button></div><button class="pri" id="rpg" style="width:100%">📄 Report · Print / PDF</button></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea service'+(allS?'':' in '+fl)+'.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
  else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;if(!allY&&(t.date<yr+'-04-01'||t.date>(+yr+1)+'-03-31'))return false;
    var hs=[t.desc,t.cur,t.date,mname(t.date.slice(0,7)),TL[t.type],t.amt.toFixed(2),String(t.amt)].join(' ').toLowerCase();return tk.every(function(k){return hs.indexOf(k)>=0;});})),s3=sums(res);$('pill').textContent=res.length+' found';
   $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return '<div><b>'+c+'</b> · <span class="cc">+'+fm(c,a.c)+'</span> · <span class="ce">−'+fm(c,a.e)+'</span> · <span class="ct">→'+fm(c,a.t)+'</span></div>';}).join('')+'</div><div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions'+(allY?'':' in '+fyLabel(yr))+'.</div>';}
@@ -184,12 +184,11 @@ $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=
 $('md').onclick=function(e){if(e.target===$('md'))closeM();};
 $('rpx').onclick=closeR;$('rpp').onclick=function(){window.print();};
 ['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){var id=e.target.id;if(id==='so'||id==='sf')seaPrev();else if(id==='rps'&&e.target.value!=='custom'){var r=rpRange(e.target.value);$('rpa').value=r[0];$('rpb2').value=r[1];}else if(id==='rpa'||id==='rpb2')$('rps').value='custom';});});
-function shift(n){if(tab===3&&allY)return;if(tab>=2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
+function shift(n){if(tab===3&&allY)return;if(tab===4&&allS)allS=false;if(tab>=2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
 $('prev').onclick=function(){shift(-1);};$('next').onclick=function(){shift(1);};$('fab').onclick=function(){if(tab===4)seaForm(null);else form(null);};
 [1,2,3,4].forEach(function(n){$('t'+n).onclick=function(){tab=n;render();window.scrollTo(0,0);};});
 $('q').oninput=render;$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.ay)allY=!allY;else flt=b.dataset.f;[].forEach.call($('fl').children,function(x){x.className=x.dataset.ay?(allY?'on':''):(x.dataset.f===flt?'on':'');});render();};
-document.body.addEventListener('change',function(e){if(e.target.id==='sfy'){yr=e.target.value;render();}});
-document.body.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);var sr=e.target.closest('tr[data-s]');if(sr)seaForm(sr.dataset.s);
+document.body.addEventListener('click',function(e){var sv=e.target.closest('button[data-sv]');if(sv){allS=sv.dataset.sv==='all';render();return;}var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);var sr=e.target.closest('tr[data-s]');if(sr)seaForm(sr.dataset.s);
  if(e.target.id==='rpg')reportForm();if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
 $('rf').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result),h={};S.tx.forEach(function(t){h[t.id]=1;});var n=0;(o.tx||[]).forEach(function(t){if(!h[t.id]){S.tx.push(t);n++;}});var hs={};S.sea.forEach(function(t){hs[t.id]=1;});(o.sea||[]).forEach(function(t){if(!hs[t.id]){S.sea.push(t);n++;}});save();render();alert('Restored '+n+' new entries.');}catch(e){alert('That is not a valid backup file.');}};fr.readAsText(f);};
 (function(){var sx=0,sy=0,h=document.querySelector('.hdr');h.addEventListener('touchstart',function(e){var t=e.changedTouches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
