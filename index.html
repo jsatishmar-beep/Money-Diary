@@ -32,8 +32,8 @@ th{text-align:right;font-size:12px;color:var(--mut)}th:first-child{text-align:le
 .yt th:first-child,.yt td:first-child{text-align:left;width:19%;font-weight:700}.yt td.z{color:var(--mut);font-weight:400}
 .yt tr.tot td{font-weight:800;border-top:2px solid var(--ac);background:var(--bg)!important}.yw{overflow-x:auto}
 .empty{color:var(--mut);text-align:center;padding:24px 0}
-input{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit;margin-bottom:8px}
-input:focus{outline:0;border-color:var(--ac)}
+input,select{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit;margin-bottom:8px}
+input:focus,select:focus{outline:0;border-color:var(--ac)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chips button,.seg button{padding:8px 12px;border-radius:99px;border:2px solid var(--ac);color:var(--ac);font-weight:700;font-size:13px}
 .chips button.on,.seg button.on{background:var(--ac);color:#fff}.seg{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .pri{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;padding:11px 18px;border-radius:12px;font-weight:700}
@@ -65,7 +65,15 @@ tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,13
 .sea{text-align:center}.sea .sl{font-size:12px;font-weight:700;color:var(--mut)}.sea .big{font-size:56px;font-weight:800;line-height:1.1;color:var(--ac);margin:4px 0 2px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.two div{background:var(--bg);border-radius:12px;padding:10px 4px}.two b{font-size:20px;display:block}.two small{font-size:11px;color:var(--mut);font-weight:600}
 .sl2 td{vertical-align:middle}.sl2 td:last-child{text-align:right;font-weight:800;white-space:nowrap;color:var(--ac)}.sl2 small{display:block;color:var(--mut);font-weight:600;font-size:12px}.sl2 tr{cursor:pointer}
-@media print{.hdr,.bnav,#fab{display:none!important}}
+#rp{position:fixed;inset:0;background:#fff;color:#111;z-index:50;overflow:auto;padding:calc(10px + env(safe-area-inset-top,0px)) 8px 30px}#rp[hidden]{display:none}
+.np{display:flex;gap:8px;position:sticky;top:0;background:#fff;padding:6px 0 10px;z-index:2}.np button{flex:1}
+.np2{font-size:11px;color:#555;margin:0 0 10px}
+#rpb h2{text-align:center;margin:6px 0 4px;font-size:20px;color:#111;letter-spacing:.5px}.rpm{text-align:center;font-size:13px;margin-bottom:12px;color:#333}
+.rw{overflow-x:auto}.rpt{width:100%;border-collapse:collapse;font-size:10px}.rpt th,.rpt td{font-size:10.5px;border:1px solid #444;padding:5px 2px;text-align:left;color:#111;vertical-align:top;background:#fff}.rpt th{background:#e5e7eb}.rpt td.r,.rpt th.r,.rpt td.dt,.rpt th.dt{white-space:nowrap}.rpt td.r,.rpt th.r{text-align:right}.rpt td:first-child,.rpt th:first-child{width:22px}.rpt tr.tt td{font-weight:800;background:#f3f4f6}
+.rpn{font-size:11px;color:#333;margin-top:8px;line-height:1.5}
+@media print{.hdr,.bnav,#fab{display:none!important}
+body.rpo>*:not(#rp){display:none!important}body.rpo{padding:0;max-width:none;background:#fff}body.rpo #rp{position:static;overflow:visible;padding:0}body.rpo .np,body.rpo .np2{display:none!important}.rpt th,.rpt td{font-size:12px;padding:6px 5px}}
+@page{size:A4;margin:14mm}
 </style>
 </head>
 <body>
@@ -83,6 +91,7 @@ tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,13
 <nav class="bnav"><button id="t1" class="on"><span>🗓️</span>Month</button><button id="t2"><span>📊</span>Year</button><button id="t3"><span>🔍</span>Search</button><button id="t4"><span>⚓</span>Sea</button></nav>
 <div class="sb" id="sb" hidden><div class="sbp" id="sbp"></div></div>
 <div id="toast"></div>
+<div id="rp" hidden><div class="np"><button class="pri" id="rpp">🖨 Print / PDF</button><button class="gh" id="rpx">Close</button></div><p class="np2">In the print screen choose “Save as PDF” as the printer.</p><div id="rpb"></div></div>
 <div class="md" id="md" hidden><div class="mb" id="mb"></div></div>
 <input type="file" id="rf" hidden>
 <script>
@@ -123,8 +132,8 @@ function render(){
   $('v2').innerHTML=(h2||'<div class="card empty">No transactions in '+fl+'.</div>')+'<div class="card"><h3>Data</h3><div class="btns"><button class="gh" id="bk">Backup</button><button class="gh" id="rst">Restore</button></div></div>';}
  else if(tab===4){var lo=dn(yr+'-04-01'),hi=dn((+yr+1)+'-03-31'),fy=seaDays(lo,hi),tt=seaDays(-1e9,1e9),fl=fyLabel(yr),nfy=0,ls=S.sea.slice().sort(function(a,b){return a.on<b.on?1:a.on>b.on?-1:0;});$('pill').textContent=ls.length+' contracts';
   var rw=ls.map(function(c){var tot=seaDays(-1e9,1e9,[c]),f=seaDays(lo,hi,[c]);if(f>0)nfy++;
-   return '<tr data-s="'+c.id+'"><td><b>'+esc(c.v||'Sea contract')+'</b><small>'+fd(c.on)+' \u2192 '+(c.off?fd(c.off):'on board')+'</small></td><td>'+tot+' d'+(f!==tot?'<small>'+f+' in '+fl+'</small>':'')+'</td></tr>';}).join('');
-  $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><div class="sl">'+fl+'</div><div class="two"><div><b>'+nfy+'</b><small>Contracts this FY</small></div><div><b>'+tt+'</b><small>All years (days)</small></div></div><div class="lgd">Sign-on and sign-off days are not counted.<br>A contract still on board counts up to today.</div></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea contracts yet.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
+   return '<tr data-s="'+c.id+'"><td><b>'+esc(c.v||'Sea contract')+'</b><small>'+fd(c.on)+' \u2192 '+(c.off?fd(c.off):'on board')+'</small>'+((c.pon||c.poff)?'<small>'+esc(c.pon||'\u2014')+' \u2192 '+esc(c.poff||'\u2014')+'</small>':'')+'</td><td>'+tot+' d'+(f!==tot?'<small>'+f+' in '+fl+'</small>':'')+'</td></tr>';}).join('');
+  $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><div class="sl">'+fl+'</div><div class="two"><div><b>'+nfy+'</b><small>Contracts this FY</small></div><div><b>'+tt+'</b><small>All years (days)</small></div></div><div class="lgd">Sign-on and sign-off days are not counted.<br>A contract still on board counts up to today.</div><button class="pri" id="rpg" style="width:100%;margin-top:12px">📄 Sea service report (Print / PDF)</button></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea contracts yet.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
  else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;if(!allY&&(t.date<yr+'-04-01'||t.date>(+yr+1)+'-03-31'))return false;
    var hs=[t.desc,t.cur,t.date,mname(t.date.slice(0,7)),TL[t.type],t.amt.toFixed(2),String(t.amt)].join(' ').toLowerCase();return tk.every(function(k){return hs.indexOf(k)>=0;});})),s3=sums(res);$('pill').textContent=res.length+' found';
   $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return '<div><b>'+c+'</b> · <span class="cc">+'+fm(c,a.c)+'</span> · <span class="ce">−'+fm(c,a.e)+'</span> · <span class="ct">→'+fm(c,a.t)+'</span></div>';}).join('')+'</div><div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions'+(allY?'':' in '+fyLabel(yr))+'.</div>';}
@@ -136,8 +145,20 @@ function seaDays(lo,hi,list){var iv=[];(list||S.sea).forEach(function(c){if(!c.o
 function seaPrev(){var a=$('so')&&$('so').value,b=$('sf')&&$('sf').value,p=$('sp');if(!p)return;if(!a){p.textContent='';return;}
  if(b&&b<a){p.textContent='Sign off is before sign on.';p.style.color='var(--ex)';return;}
  p.style.color='var(--ac)';p.textContent='Days out of India: '+seaDays(-1e9,1e9,[{on:a,off:b}])+(b?'':' (till today)');}
-function seaForm(id){var c=id?S.sea.filter(function(x){return x.id===id;})[0]:null;sid=id||null;
- openM('<h3>'+(c?'Edit':'New')+' sea contract</h3><label class="lb">Vessel (optional)</label><input id="sv" placeholder="Vessel name" maxlength="60" value="'+esc(c?c.v||'':'')+'"><label class="lb">Sign on date</label><input id="so" type="date" value="'+(c?c.on:today())+'"><label class="lb">Sign off date (empty = still on board)</label><input id="sf" type="date" value="'+(c&&c.off?c.off:'')+'"><p id="sp"></p><div class="mbt"><button class="pri" data-a="ssave">Save</button>'+(c?'<button class="gh" data-a="sdel">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');seaPrev();}
+function seaForm(id){var c=id?S.sea.filter(function(x){return x.id===id;})[0]:null;sid=id||null;var pl={};S.sea.forEach(function(x){if(x.pon)pl[x.pon]=1;if(x.poff)pl[x.poff]=1;});
+ openM('<h3>'+(c?'Edit':'New')+' sea contract</h3><label class="lb">Vessel (optional)</label><input id="sv" placeholder="Vessel name" maxlength="60" value="'+esc(c?c.v||'':'')+'"><datalist id="pl">'+Object.keys(pl).map(function(p){return '<option value="'+esc(p)+'">';}).join('')+'</datalist><label class="lb">Sign on date</label><input id="so" type="date" value="'+(c?c.on:today())+'"><label class="lb">Sign on place</label><input id="sop" list="pl" placeholder="Port / place" maxlength="60" value="'+esc(c?c.pon||'':'')+'"><label class="lb">Sign off date (empty = still on board)</label><input id="sf" type="date" value="'+(c&&c.off?c.off:'')+'"><label class="lb">Sign off place</label><input id="sfp" list="pl" placeholder="Port / place" maxlength="60" value="'+esc(c?c.poff||'':'')+'"><p id="sp"></p><div class="mbt"><button class="pri" data-a="ssave">Save</button>'+(c?'<button class="gh" data-a="sdel">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');seaPrev();}
+function fyList(){var t=fyOf(today()),mn=t,mx=t;S.sea.forEach(function(c){var a=fyOf(c.on),b=fyOf(c.off||today());if(a<mn)mn=a;if(b>mx)mx=b;});var o=[];for(var y=+mx;y>=+mn;y--)o.push(String(y));return o;}
+function rpRange(v){if(v==='all'){var mn='9999-12-31',mx='0000-01-01';S.sea.forEach(function(c){if(c.on<mn)mn=c.on;var e=c.off||today();if(e>mx)mx=e;});return S.sea.length?[mn,mx]:[today(),today()];}return [v+'-04-01',(+v+1)+'-03-31'];}
+function reportForm(){var fl=fyList(),cur=fl.indexOf(yr)>=0?yr:fl[0],r=rpRange(cur);
+ openM('<h3>Sea service report</h3><label class="lb">Period</label><select id="rps">'+fl.map(function(y){return '<option value="'+y+'"'+(y===cur?' selected':'')+'>'+fyLabel(y)+'</option>';}).join('')+'<option value="all">All sea service</option><option value="custom">Custom dates</option></select><label class="lb">From</label><input id="rpa" type="date" value="'+r[0]+'"><label class="lb">To</label><input id="rpb2" type="date" value="'+r[1]+'"><div class="mbt"><button class="pri" data-a="rgen">Create report</button><button class="gh" data-a="x">Cancel</button></div>');}
+function report(a,b,lab){var lo=dn(a),hi=dn(b),ls=S.sea.filter(function(c){return c.on<=b&&(c.off||today())>=a;}).sort(function(x,y){return x.on<y.on?-1:x.on>y.on?1:0;}),clip=false,ong=false;
+ var rows=ls.map(function(c,i){var d=seaDays(lo,hi,[c]),full=seaDays(-1e9,1e9,[c]);if(d!==full)clip=true;if(!c.off)ong=true;
+  return '<tr><td>'+(i+1)+'</td><td>'+esc(c.v||'\u2014')+'</td><td class="dt">'+fd(c.on)+'</td><td>'+esc(c.pon||'\u2014')+'</td><td class="dt">'+(c.off?fd(c.off):'On board')+'</td><td>'+esc(c.poff||'\u2014')+'</td><td class="r">'+d+(d!==full?'*':'')+'</td></tr>';}).join('');
+ var tot=seaDays(lo,hi,ls);
+ $('rpb').innerHTML='<h2>SEA SERVICE RECORD</h2><div class="rpm">'+(lab?'<b>'+lab+'</b> &nbsp;\u00b7&nbsp; ':'')+fd(a)+' to '+fd(b)+'</div>'+(ls.length?'<div class="rw"><table class="rpt"><tr><th>#</th><th>Vessel</th><th class="dt">Sign on</th><th>Place</th><th class="dt">Sign off</th><th>Place</th><th class="r">Days</th></tr>'+rows+'<tr class="tt"><td colspan="6">Total days out of India</td><td class="r">'+tot+'</td></tr></table></div>':'<p style="text-align:center">No sea service in this period.</p>')
+  +'<div class="rpn">Days = days between sign on and sign off; the sign-on and sign-off days are not counted.'+(clip?'<br>* Days counted only within the selected period.':'')+(ong?'<br>On board: counted up to '+fd(today())+'.':'')+'<br>Generated on '+fd(today())+'.</div>';
+ $('rp').hidden=false;document.body.classList.add('rpo');$('rp').scrollTop=0;}
+function closeR(){$('rp').hidden=true;document.body.classList.remove('rpo');}
 function openM(h){$('mb').innerHTML=h;$('md').hidden=false;}function closeM(){$('md').hidden=true;$('mb').innerHTML='';}
 function form(id){var t=id?find(id):null;eid=id||null;ft=t?t.type:'e';
  openM('<h3>'+(t?'Edit':'New')+' transaction</h3><div class="seg" id="seg"><button data-ty="c">Credit</button><button data-ty="e">Debit · Expense</button><button data-ty="t">Debit · Transferred</button></div><input id="fa" inputmode="decimal" placeholder="Amount" value="'+(t?t.amt:'')+'"><input id="fc" list="curs" placeholder="Currency (e.g. INR, USD)" maxlength="5" value="'+esc(t?t.cur:S.last)+'"><datalist id="curs">'+CUR.map(function(c){return '<option value="'+c+'">';}).join('')+'</datalist><input id="fd" type="date" value="'+(t?t.date:today())+'"><input id="fn" placeholder="Description (optional)" maxlength="120" value="'+esc(t?t.desc:'')+'"><div class="mbt"><button class="pri" data-a="save">Save</button>'+(t?'<button class="gh" data-a="del">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');segUp();}
@@ -152,20 +173,22 @@ $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=
   if(t){t.amt=amt;t.cur=cur;t.date=d;t.type=ft;t.desc=$('fn').value.trim();}else S.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),amt:amt,cur:cur,date:d,type:ft,desc:$('fn').value.trim()});
   S.last=cur;save();ym=d.slice(0,7);yr=fyOf(d);closeM();render();}
  else if(a==='ssave'){var on=$('so').value,off=$('sf').value;if(!on){alert('Enter the sign on date.');return;}if(off&&off<on){alert('Sign off cannot be before sign on.');return;}
-  var v=$('sv').value.trim(),c=sid?S.sea.filter(function(x){return x.id===sid;})[0]:null;if(c){c.on=on;c.off=off;c.v=v;}else S.sea.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),on:on,off:off,v:v});
+  var v=$('sv').value.trim(),po=$('sop').value.trim(),pq=$('sfp').value.trim(),c=sid?S.sea.filter(function(x){return x.id===sid;})[0]:null;if(c){c.on=on;c.off=off;c.v=v;c.pon=po;c.poff=pq;}else S.sea.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),on:on,off:off,v:v,pon:po,poff:pq});
   save();yr=fyOf(on);closeM();render();}
+ else if(a==='rgen'){var ra=$('rpa').value,rb=$('rpb2').value,sv=$('rps').value;if(!ra||!rb||rb<ra){alert('Choose a valid From and To date.');return;}closeM();report(ra,rb,sv==='all'?'All sea service':(sv==='custom'?'':fyLabel(sv)));}
  else if(a==='sdel'){S.sea=S.sea.filter(function(x){return x.id!==sid;});save();closeM();render();}
  else if(a==='del'){S.tx=S.tx.filter(function(t){return t.id!==eid;});save();closeM();render();}
  else if(a==='sh'){try{var f=new File([pf.s],pf.n,{type:'text/plain'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Money backup'}).then(function(){note('Shared ✓');}).catch(function(){});return;}}catch(x){}note('Sharing not available. Tap Download.');}
  else if(a==='dl'){var l=document.createElement('a');l.href=URL.createObjectURL(new Blob([pf.s],{type:'application/json'}));l.download=pf.n;document.body.appendChild(l);l.click();document.body.removeChild(l);note('Downloaded ✓ Check your Downloads folder for '+pf.n);}};
 $('md').onclick=function(e){if(e.target===$('md'))closeM();};
-['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){if(e.target.id==='so'||e.target.id==='sf')seaPrev();});});
+$('rpx').onclick=closeR;$('rpp').onclick=function(){window.print();};
+['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){var id=e.target.id;if(id==='so'||id==='sf')seaPrev();else if(id==='rps'&&e.target.value!=='custom'){var r=rpRange(e.target.value);$('rpa').value=r[0];$('rpb2').value=r[1];}else if(id==='rpa'||id==='rpb2')$('rps').value='custom';});});
 function shift(n){if(tab===3&&allY)return;if(tab>=2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
 $('prev').onclick=function(){shift(-1);};$('next').onclick=function(){shift(1);};$('fab').onclick=function(){if(tab===4)seaForm(null);else form(null);};
 [1,2,3,4].forEach(function(n){$('t'+n).onclick=function(){tab=n;render();window.scrollTo(0,0);};});
 $('q').oninput=render;$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.ay)allY=!allY;else flt=b.dataset.f;[].forEach.call($('fl').children,function(x){x.className=x.dataset.ay?(allY?'on':''):(x.dataset.f===flt?'on':'');});render();};
 document.body.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);var sr=e.target.closest('tr[data-s]');if(sr)seaForm(sr.dataset.s);
- if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
+ if(e.target.id==='rpg')reportForm();if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
 $('rf').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result),h={};S.tx.forEach(function(t){h[t.id]=1;});var n=0;(o.tx||[]).forEach(function(t){if(!h[t.id]){S.tx.push(t);n++;}});var hs={};S.sea.forEach(function(t){hs[t.id]=1;});(o.sea||[]).forEach(function(t){if(!hs[t.id]){S.sea.push(t);n++;}});save();render();alert('Restored '+n+' new entries.');}catch(e){alert('That is not a valid backup file.');}};fr.readAsText(f);};
 (function(){var sx=0,sy=0,h=document.querySelector('.hdr');h.addEventListener('touchstart',function(e){var t=e.changedTouches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
  h.addEventListener('touchend',function(e){var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>45&&Math.abs(dx)>1.5*Math.abs(dy))shift(dx<0?1:-1);},{passive:true});})();
