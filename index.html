@@ -61,6 +61,10 @@ input:focus{outline:0;border-color:var(--ac)}
 .lg u{width:14px;height:14px;border-radius:50%;border:2.5px solid;display:inline-block}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));background:#10302b;color:#fff;padding:9px 16px;border-radius:99px;font-size:14px;z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}#toast.on{opacity:1}
 tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,136,.28)}100%{background:transparent}}
+.lb{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:4px 0}
+.sea{text-align:center}.sea .sl{font-size:12px;font-weight:700;color:var(--mut)}.sea .big{font-size:56px;font-weight:800;line-height:1.1;color:var(--ac);margin:4px 0 2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.two div{background:var(--bg);border-radius:12px;padding:10px 4px}.two b{font-size:20px;display:block}.two small{font-size:11px;color:var(--mut);font-weight:600}
+.sl2 td{vertical-align:middle}.sl2 td:last-child{text-align:right;font-weight:800;white-space:nowrap;color:var(--ac)}.sl2 small{display:block;color:var(--mut);font-weight:600;font-size:12px}.sl2 tr{cursor:pointer}
 @media print{.hdr,.bnav,#fab{display:none!important}}
 </style>
 </head>
@@ -69,13 +73,14 @@ tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,13
 <div class="date" id="dt"><button class="nav" id="prev" aria-label="Previous">‹</button><b id="dl"></b><button class="nav" id="next" aria-label="Next">›</button></div></div>
 <div id="v1"></div>
 <div id="v2" hidden></div>
+<div id="v4" hidden></div>
 <div id="v3" hidden>
  <input id="q" placeholder="Search description, amount, currency, date, month…" autocomplete="off">
- <div class="chips" id="fl"><button data-f="all" class="on">All</button><button data-f="c">Credit</button><button data-f="e">Expense</button><button data-f="t">Transferred</button></div>
+ <div class="chips" id="fl"><button data-f="all" class="on">All</button><button data-f="c">Credit</button><button data-f="e">Expense</button><button data-f="t">Transferred</button><button data-ay="1">All years</button></div>
  <div id="sr"></div>
 </div>
 <button id="fab" aria-label="Add transaction">＋</button>
-<nav class="bnav"><button id="t1" class="on"><span>🗓️</span>Month</button><button id="t2"><span>📊</span>Year</button><button id="t3"><span>🔍</span>Search</button></nav>
+<nav class="bnav"><button id="t1" class="on"><span>🗓️</span>Month</button><button id="t2"><span>📊</span>Year</button><button id="t3"><span>🔍</span>Search</button><button id="t4"><span>⚓</span>Sea</button></nav>
 <div class="sb" id="sb" hidden><div class="sbp" id="sbp"></div></div>
 <div id="toast"></div>
 <div class="md" id="md" hidden><div class="mb" id="mb"></div></div>
@@ -84,12 +89,13 @@ tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,13
 (function(){
 var K='skjMoney.v1',S={tx:[],last:'INR'},$=function(i){return document.getElementById(i);};
 try{var r=localStorage.getItem(K);if(r){var q0=JSON.parse(r);if(q0&&q0.tx)S=q0;}}catch(e){}
+if(!S.sea)S.sea=[];
 function save(){try{localStorage.setItem(K,JSON.stringify(S));}catch(e){alert('Storage full or blocked. Take a backup.');}}
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function today(){return iso(new Date());}
 function fyOf(d){var y=+d.slice(0,4),m=+d.slice(5,7);return String(m>=4?y:y-1);}
 function fyLabel(y){return 'FY '+y+'\u2013'+String(+y+1).slice(2);}
-var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
+var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',allY=false,sid=null,TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
 var CUR=['INR','USD','EUR','GBP','AED','SGD','AUD','CAD','JPY'];
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function mname(m){return new Date(+m.slice(0,4),+m.slice(5)-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});}
@@ -101,8 +107,8 @@ function find(id){return S.tx.filter(function(t){return t.id===id;})[0];}
 function rows(l){return '<table class="tl">'+l.map(function(t){var d=new Date(+t.date.slice(0,4),+t.date.slice(5,7)-1,+t.date.slice(8));
  return '<tr data-i="'+t.id+'" data-d="'+t.date+'"><td>'+(+t.date.slice(8))+'<small>'+d.toLocaleDateString(undefined,{month:'short'})+'</small></td><td>'+(esc(t.desc)||'<span class="cc" style="color:var(--mut)">—</span>')+'<small>'+TL[t.type]+(t.type==='c'?'':' · Debit')+'</small></td><td class="a c'+t.type+'">'+(t.type==='c'?'+ ':'− ')+fm(t.cur,Math.round(t.amt*100))+'</td></tr>';}).join('')+'</table>';}
 function render(){
- var Y=tab===2;$('dt').hidden=tab===3;$('dl').textContent=Y?fyLabel(yr):mname(ym);
- ['v1','v2','v3'].forEach(function(v,i){$(v).hidden=tab!==i+1;});[1,2,3].forEach(function(n){$('t'+n).className=tab===n?'on':'';});
+ $('dl').textContent=tab===1?mname(ym):(tab===3&&allY?'All years':fyLabel(yr));
+ ['v1','v2','v3','v4'].forEach(function(v,i){$(v).hidden=tab!==i+1;});[1,2,3,4].forEach(function(n){$('t'+n).className=tab===n?'on':'';});
  if(tab===1){var l=srt(S.tx.filter(function(t){return t.date.slice(0,7)===ym;})),s=sums(l);$('pill').textContent=l.length+' entries';
   var h=Object.keys(s).sort().map(function(c){var a=s[c],db=a.e+a.t;return '<div class="card"><h3>'+c+' · '+mname(ym)+'</h3><table class="st"><tr><td>Credits</td><td class="cc">+ '+fm(c,a.c)+'</td></tr><tr><td>Expenses</td><td class="ce">− '+fm(c,a.e)+'</td></tr><tr><td>Transferred</td><td class="ct">− '+fm(c,a.t)+'</td></tr><tr><td>Total debits</td><td>− '+fm(c,db)+'</td></tr><tr><td><b>Net</b></td><td class="'+(a.c-db>=0?'cc':'ce')+'">'+fm(c,a.c-db)+'</td></tr></table></div>';}).join('');
   $('v1').innerHTML=l.length?h+'<div class="card">'+rows(l)+'</div>':'<div class="card empty">No transactions this month.<br>Tap ＋ to add one.</div>';}
@@ -115,15 +121,28 @@ function render(){
    var tn=tot.c-tot.e-tot.t;
    return '<div class="card"><h3>'+c+' \u00b7 '+fl+'</h3><div class="yw"><table class="yt"><tr><th>Month</th><th>Cr</th><th>Dr</th><th>Tr</th><th>Net</th></tr>'+b+'<tr class="tot"><td>Total</td><td class="cc">'+f(tot.c)+'</td><td class="ce">'+f(tot.e)+'</td><td class="ct">'+f(tot.t)+'</td><td class="'+(tn>=0?'cc':'ce')+'">'+f(tn)+'</td></tr></table></div><div class="lgd">Cr = Credit &nbsp;\u00b7&nbsp; Dr = Expense &nbsp;\u00b7&nbsp; Tr = Transferred &nbsp;\u00b7&nbsp; Net = Cr \u2212 Dr \u2212 Tr</div></div>';}).join('');
   $('v2').innerHTML=(h2||'<div class="card empty">No transactions in '+fl+'.</div>')+'<div class="card"><h3>Data</h3><div class="btns"><button class="gh" id="bk">Backup</button><button class="gh" id="rst">Restore</button></div></div>';}
- else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;
+ else if(tab===4){var lo=dn(yr+'-04-01'),hi=dn((+yr+1)+'-03-31'),fy=seaDays(lo,hi),tt=seaDays(-1e9,1e9),fl=fyLabel(yr),nfy=0,ls=S.sea.slice().sort(function(a,b){return a.on<b.on?1:a.on>b.on?-1:0;});$('pill').textContent=ls.length+' contracts';
+  var rw=ls.map(function(c){var tot=seaDays(-1e9,1e9,[c]),f=seaDays(lo,hi,[c]);if(f>0)nfy++;
+   return '<tr data-s="'+c.id+'"><td><b>'+esc(c.v||'Sea contract')+'</b><small>'+fd(c.on)+' \u2192 '+(c.off?fd(c.off):'on board')+'</small></td><td>'+tot+' d'+(f!==tot?'<small>'+f+' in '+fl+'</small>':'')+'</td></tr>';}).join('');
+  $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><div class="sl">'+fl+'</div><div class="two"><div><b>'+nfy+'</b><small>Contracts this FY</small></div><div><b>'+tt+'</b><small>All years (days)</small></div></div><div class="lgd">Sign-on and sign-off days are not counted.<br>A contract still on board counts up to today.</div></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea contracts yet.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
+ else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;if(!allY&&(t.date<yr+'-04-01'||t.date>(+yr+1)+'-03-31'))return false;
    var hs=[t.desc,t.cur,t.date,mname(t.date.slice(0,7)),TL[t.type],t.amt.toFixed(2),String(t.amt)].join(' ').toLowerCase();return tk.every(function(k){return hs.indexOf(k)>=0;});})),s3=sums(res);$('pill').textContent=res.length+' found';
-  $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return '<div><b>'+c+'</b> · <span class="cc">+'+fm(c,a.c)+'</span> · <span class="ce">−'+fm(c,a.e)+'</span> · <span class="ct">→'+fm(c,a.t)+'</span></div>';}).join('')+'</div><div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions.</div>';}
+  $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return '<div><b>'+c+'</b> · <span class="cc">+'+fm(c,a.c)+'</span> · <span class="ce">−'+fm(c,a.e)+'</span> · <span class="ct">→'+fm(c,a.t)+'</span></div>';}).join('')+'</div><div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions'+(allY?'':' in '+fyLabel(yr))+'.</div>';}
 }
+function dn(s){return Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/864e5;}
+function fd(s){return new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});}
+function seaDays(lo,hi,list){var iv=[];(list||S.sea).forEach(function(c){if(!c.on)return;var a=dn(c.on)+1,b=c.off?dn(c.off)-1:dn(today());if(b<a)return;a=Math.max(a,lo);b=Math.min(b,hi);if(b>=a)iv.push([a,b]);});
+ iv.sort(function(x,y){return x[0]-y[0];});var n=0,e=-1e12;iv.forEach(function(v){if(v[1]<=e)return;n+=v[1]-Math.max(v[0],e+1)+1;e=v[1];});return n;}
+function seaPrev(){var a=$('so')&&$('so').value,b=$('sf')&&$('sf').value,p=$('sp');if(!p)return;if(!a){p.textContent='';return;}
+ if(b&&b<a){p.textContent='Sign off is before sign on.';p.style.color='var(--ex)';return;}
+ p.style.color='var(--ac)';p.textContent='Days out of India: '+seaDays(-1e9,1e9,[{on:a,off:b}])+(b?'':' (till today)');}
+function seaForm(id){var c=id?S.sea.filter(function(x){return x.id===id;})[0]:null;sid=id||null;
+ openM('<h3>'+(c?'Edit':'New')+' sea contract</h3><label class="lb">Vessel (optional)</label><input id="sv" placeholder="Vessel name" maxlength="60" value="'+esc(c?c.v||'':'')+'"><label class="lb">Sign on date</label><input id="so" type="date" value="'+(c?c.on:today())+'"><label class="lb">Sign off date (empty = still on board)</label><input id="sf" type="date" value="'+(c&&c.off?c.off:'')+'"><p id="sp"></p><div class="mbt"><button class="pri" data-a="ssave">Save</button>'+(c?'<button class="gh" data-a="sdel">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');seaPrev();}
 function openM(h){$('mb').innerHTML=h;$('md').hidden=false;}function closeM(){$('md').hidden=true;$('mb').innerHTML='';}
 function form(id){var t=id?find(id):null;eid=id||null;ft=t?t.type:'e';
  openM('<h3>'+(t?'Edit':'New')+' transaction</h3><div class="seg" id="seg"><button data-ty="c">Credit</button><button data-ty="e">Debit · Expense</button><button data-ty="t">Debit · Transferred</button></div><input id="fa" inputmode="decimal" placeholder="Amount" value="'+(t?t.amt:'')+'"><input id="fc" list="curs" placeholder="Currency (e.g. INR, USD)" maxlength="5" value="'+esc(t?t.cur:S.last)+'"><datalist id="curs">'+CUR.map(function(c){return '<option value="'+c+'">';}).join('')+'</datalist><input id="fd" type="date" value="'+(t?t.date:today())+'"><input id="fn" placeholder="Description (optional)" maxlength="120" value="'+esc(t?t.desc:'')+'"><div class="mbt"><button class="pri" data-a="save">Save</button>'+(t?'<button class="gh" data-a="del">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');segUp();}
 function segUp(){[].forEach.call(document.querySelectorAll('#seg button'),function(b){b.className=b.dataset.ty===ft?'on':'';});}
-function offer(){openM('<h3>Backup ready</h3><p>'+S.tx.length+' transactions. Choose how to save it.</p><div class="mbt"><button class="pri" data-a="sh">📤 Share / Save to Drive</button><button class="gh" data-a="dl">⬇ Download</button><button class="gh" data-a="x">Close</button></div>');pf={s:JSON.stringify(S),n:'SKJ_Money_Backup_'+today()+'.json'};}
+function offer(){openM('<h3>Backup ready</h3><p>'+S.tx.length+' transactions, '+S.sea.length+' sea contracts. Choose how to save it.</p><div class="mbt"><button class="pri" data-a="sh">📤 Share / Save to Drive</button><button class="gh" data-a="dl">⬇ Download</button><button class="gh" data-a="x">Close</button></div>');pf={s:JSON.stringify(S),n:'SKJ_Money_Backup_'+today()+'.json'};}
 function note(t){var p=document.querySelector('#mb p');if(p){p.textContent=t;p.style.color='var(--cr)';}}
 $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=b.dataset.a;
  if(b.dataset.ty){ft=b.dataset.ty;segUp();return;}
@@ -132,19 +151,24 @@ $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=
   var cur=($('fc').value||'').trim().toUpperCase()||S.last,d=$('fd').value||today(),t=eid?find(eid):null;
   if(t){t.amt=amt;t.cur=cur;t.date=d;t.type=ft;t.desc=$('fn').value.trim();}else S.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),amt:amt,cur:cur,date:d,type:ft,desc:$('fn').value.trim()});
   S.last=cur;save();ym=d.slice(0,7);yr=fyOf(d);closeM();render();}
+ else if(a==='ssave'){var on=$('so').value,off=$('sf').value;if(!on){alert('Enter the sign on date.');return;}if(off&&off<on){alert('Sign off cannot be before sign on.');return;}
+  var v=$('sv').value.trim(),c=sid?S.sea.filter(function(x){return x.id===sid;})[0]:null;if(c){c.on=on;c.off=off;c.v=v;}else S.sea.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),on:on,off:off,v:v});
+  save();yr=fyOf(on);closeM();render();}
+ else if(a==='sdel'){S.sea=S.sea.filter(function(x){return x.id!==sid;});save();closeM();render();}
  else if(a==='del'){S.tx=S.tx.filter(function(t){return t.id!==eid;});save();closeM();render();}
  else if(a==='sh'){try{var f=new File([pf.s],pf.n,{type:'text/plain'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Money backup'}).then(function(){note('Shared ✓');}).catch(function(){});return;}}catch(x){}note('Sharing not available. Tap Download.');}
  else if(a==='dl'){var l=document.createElement('a');l.href=URL.createObjectURL(new Blob([pf.s],{type:'application/json'}));l.download=pf.n;document.body.appendChild(l);l.click();document.body.removeChild(l);note('Downloaded ✓ Check your Downloads folder for '+pf.n);}};
 $('md').onclick=function(e){if(e.target===$('md'))closeM();};
-function shift(n){if(tab===2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
-$('prev').onclick=function(){shift(-1);};$('next').onclick=function(){shift(1);};$('fab').onclick=function(){form(null);};
-[1,2,3].forEach(function(n){$('t'+n).onclick=function(){tab=n;render();window.scrollTo(0,0);};});
-$('q').oninput=render;$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;flt=b.dataset.f;[].forEach.call($('fl').children,function(x){x.className=x.dataset.f===flt?'on':'';});render();};
-document.body.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);
+['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){if(e.target.id==='so'||e.target.id==='sf')seaPrev();});});
+function shift(n){if(tab===3&&allY)return;if(tab>=2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
+$('prev').onclick=function(){shift(-1);};$('next').onclick=function(){shift(1);};$('fab').onclick=function(){if(tab===4)seaForm(null);else form(null);};
+[1,2,3,4].forEach(function(n){$('t'+n).onclick=function(){tab=n;render();window.scrollTo(0,0);};});
+$('q').oninput=render;$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.ay)allY=!allY;else flt=b.dataset.f;[].forEach.call($('fl').children,function(x){x.className=x.dataset.ay?(allY?'on':''):(x.dataset.f===flt?'on':'');});render();};
+document.body.addEventListener('click',function(e){var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);var sr=e.target.closest('tr[data-s]');if(sr)seaForm(sr.dataset.s);
  if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
-$('rf').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result),h={};S.tx.forEach(function(t){h[t.id]=1;});var n=0;(o.tx||[]).forEach(function(t){if(!h[t.id]){S.tx.push(t);n++;}});save();render();alert('Restored '+n+' new transactions.');}catch(e){alert('That is not a valid backup file.');}};fr.readAsText(f);};
+$('rf').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result),h={};S.tx.forEach(function(t){h[t.id]=1;});var n=0;(o.tx||[]).forEach(function(t){if(!h[t.id]){S.tx.push(t);n++;}});var hs={};S.sea.forEach(function(t){hs[t.id]=1;});(o.sea||[]).forEach(function(t){if(!hs[t.id]){S.sea.push(t);n++;}});save();render();alert('Restored '+n+' new entries.');}catch(e){alert('That is not a valid backup file.');}};fr.readAsText(f);};
 (function(){var sx=0,sy=0,h=document.querySelector('.hdr');h.addEventListener('touchstart',function(e){var t=e.changedTouches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
- h.addEventListener('touchend',function(e){var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(tab!==3&&Math.abs(dx)>45&&Math.abs(dx)>1.5*Math.abs(dy))shift(dx<0?1:-1);},{passive:true});})();
+ h.addEventListener('touchend',function(e){var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>45&&Math.abs(dx)>1.5*Math.abs(dy))shift(dx<0?1:-1);},{passive:true});})();
 function toast(t){var e=$('toast');e.textContent=t;e.className='on';clearTimeout(toast.h);toast.h=setTimeout(function(){e.className='';},2200);}
 function calHtml(){var y=+cm.slice(0,4),mo=+cm.slice(5)-1,first=new Date(y,mo,1).getDay(),dim=new Date(y,mo+1,0).getDate(),mp={},td=today();
  S.tx.forEach(function(t){if(t.date.slice(0,7)!==cm)return;var a=mp[t.date]||(mp[t.date]={c:0,d:0});if(t.type==='c')a.c=1;else a.d=1;});
