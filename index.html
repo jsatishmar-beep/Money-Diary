@@ -69,10 +69,14 @@ tr.hl td{animation:hl 2s ease-out}@keyframes hl{0%,60%{background:rgba(13,148,13
 .np{display:flex;gap:8px;position:sticky;top:0;background:#fff;padding:6px 0 10px;z-index:2}.np button{flex:1}
 .np2{font-size:11px;color:#555;margin:0 0 10px}
 #rpb h2{text-align:center;margin:6px 0 4px;font-size:20px;color:#111;letter-spacing:.5px}.rpm{text-align:center;font-size:13px;margin-bottom:12px;color:#333}
-.rw{overflow-x:auto}.rpt{width:100%;border-collapse:collapse;font-size:10px}.rpt th,.rpt td{font-size:10.5px;border:1px solid #444;padding:5px 2px;text-align:left;color:#111;vertical-align:top;background:#fff}.rpt th{background:#e5e7eb}.rpt td.r,.rpt th.r,.rpt td.dt,.rpt th.dt{white-space:nowrap}.rpt td.r,.rpt th.r{text-align:right}.rpt td:first-child,.rpt th:first-child{width:22px}.rpt tr.tt td{font-weight:800;background:#f3f4f6}
+.rw{overflow-x:auto}.rpt{width:100%;border-collapse:collapse;font-size:10px}.rpt th,.rpt td{font-size:10.5px;border:1px solid #444;padding:5px 2px;text-align:left;color:#111;vertical-align:top;background:#fff}.rpt th{background:#e5e7eb}.rpt td.r,.rpt th.r,.rpt td.dt,.rpt th.dt{white-space:nowrap}.rpt td.r,.rpt th.r{text-align:right}.rpt.sn td:first-child,.rpt.sn th:first-child{width:22px}.rpt tr.tt td{font-weight:800;background:#f3f4f6}
+.tl th{font-size:11px;padding:4px 3px;text-align:left;border-bottom:1px solid var(--bd)}.tl th:first-child{text-align:center}.tl th:last-child{text-align:right}
+.tl td.cat{font-size:12px;font-weight:700;color:var(--ac);width:27%}.tl td.cat small{color:var(--mut);font-weight:600}
+#rpb h4{margin:16px 0 6px;font-size:13px;color:#111}.rpt i{font-size:.9em;color:#555}
 .rpn{font-size:11px;color:#333;margin-top:8px;line-height:1.5}
 @media print{.hdr,.bnav,#fab{display:none!important}
 body.rpo>*:not(#rp){display:none!important}body.rpo{padding:0;max-width:none;background:#fff}body.rpo #rp{position:static;overflow:visible;padding:0}body.rpo .np,body.rpo .np2{display:none!important}.rpt th,.rpt td{font-size:12px;padding:6px 5px}}
+.rpt thead{display:table-header-group}.rpt tr{page-break-inside:avoid}
 @page{size:A4;margin:14mm}
 </style>
 </head>
@@ -83,8 +87,10 @@ body.rpo>*:not(#rp){display:none!important}body.rpo{padding:0;max-width:none;bac
 <div id="v2" hidden></div>
 <div id="v4" hidden></div>
 <div id="v3" hidden>
- <input id="q" placeholder="Search description, amount, currency, date, month…" autocomplete="off">
- <div class="chips" id="fl"><button data-f="all" class="on">All</button><button data-f="c">Credit</button><button data-f="e">Expense</button><button data-f="t">Transferred</button><button data-ay="1">All years</button></div>
+ <input id="q" placeholder="Search description, category, amount, date…" autocomplete="off">
+ <div class="chips" id="fl"><button data-f="all" class="on">All</button><button data-f="c">Credit</button><button data-f="e">Expense</button><button data-f="t">Transferred</button></div>
+ <div class="chips" id="fc" style="display:none"></div>
+ <div class="chips" id="fs"><button data-sc="m">Month</button><button data-sc="y" class="on">Year</button><button data-sc="a">All years</button></div>
  <div id="sr"></div>
 </div>
 <button id="fab" aria-label="Add transaction">＋</button>
@@ -104,7 +110,8 @@ function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function today(){return iso(new Date());}
 function fyOf(d){var y=+d.slice(0,4),m=+d.slice(5,7);return String(m>=4?y:y-1);}
 function fyLabel(y){return 'FY '+y+'\u2013'+String(+y+1).slice(2);}
-var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',allY=false,allS=false,sid=null,TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
+var ym=today().slice(0,7),yr=fyOf(today()),cm=ym,sel='',tab=1,flt='all',sc='y',sct='all',allS=false,sid=null,TL={c:'Credit',e:'Expense',t:'Transferred'},ft='e',eid=null,pf=null;
+var CATS={'Clothes':['Shirts / T-shirts','Trousers / Jeans','Footwear','Winter wear','Innerwear','Work wear / Uniform','Accessories','Tailoring / Laundry'],'Food':['Groceries','Vegetables & Fruits','Milk & Dairy','Restaurant','Takeaway / Delivery','Snacks & Beverages','Tea / Coffee'],'Outing':['Movies','Trips','Hotel stay','Shopping','Entertainment','Gifts','Events / Parties'],'Bills':['Electricity','Water','Gas / LPG','Mobile recharge','Internet / DTH','Rent','EMI / Loan','Insurance','Credit card','Maintenance'],'Daily Travel':['Fuel','Bus / Metro','Auto / Taxi','Train','Parking / Toll','Vehicle service'],'Medicine':['Medicines','Doctor consultation','Tests / Lab','Hospital','Dental / Eye care','Supplements'],'Educational':['School / College fees','Books & Stationery','Tuition / Courses','Exam fees','Online courses']};
 var CUR=['INR','USD','EUR','GBP','AED','SGD','AUD','CAD','JPY'];
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function mname(m){return new Date(+m.slice(0,4),+m.slice(5)-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});}
@@ -113,14 +120,14 @@ function fm(c,v){return c+' '+(v/100).toLocaleString('en-IN',{minimumFractionDig
 function sums(l){var o={};l.forEach(function(t){var a=o[t.cur]||(o[t.cur]={c:0,e:0,t:0});a[t.type]+=Math.round(t.amt*100);});return o;}
 function srt(l){return l.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:(a.id<b.id?1:-1);});}
 function find(id){return S.tx.filter(function(t){return t.id===id;})[0];}
-function rows(l){return '<table class="tl">'+l.map(function(t){var d=new Date(+t.date.slice(0,4),+t.date.slice(5,7)-1,+t.date.slice(8));
- return '<tr data-i="'+t.id+'" data-d="'+t.date+'"><td>'+(+t.date.slice(8))+'<small>'+d.toLocaleDateString(undefined,{month:'short'})+'</small></td><td>'+(esc(t.desc)||'<span class="cc" style="color:var(--mut)">—</span>')+'<small>'+TL[t.type]+(t.type==='c'?'':' · Debit')+'</small></td><td class="a c'+t.type+'">'+(t.type==='c'?'+ ':'− ')+fm(t.cur,Math.round(t.amt*100))+'</td></tr>';}).join('')+'</table>';}
+function rows(l){return '<table class="tl"><tr class="th"><th>Date</th><th>Description</th><th>Category</th><th>Amount</th></tr>'+l.map(function(t){var d=new Date(+t.date.slice(0,4),+t.date.slice(5,7)-1,+t.date.slice(8));
+ return '<tr data-i="'+t.id+'" data-d="'+t.date+'"><td>'+(+t.date.slice(8))+'<small>'+d.toLocaleDateString(undefined,{month:'short'})+'</small></td><td>'+(esc(t.desc)||'<span class="cc" style="color:var(--mut)">—</span>')+'<small>'+TL[t.type]+(t.type==='c'?'':' · Debit')+'</small></td><td class="cat">'+(t.type==='e'?(t.cat?esc(t.cat)+(t.sub?'<small>'+esc(t.sub)+'</small>':''):'<span style="color:var(--mut)">\u2014</span>'):'')+'</td><td class="a c'+t.type+'">'+(t.type==='c'?'+ ':'− ')+fm(t.cur,Math.round(t.amt*100))+'</td></tr>';}).join('')+'</table>';}
 function render(){
- $('dl').textContent=tab===1?mname(ym):((tab===3&&allY)||(tab===4&&allS)?'All years':fyLabel(yr));
+ $('dl').textContent=(tab===1||(tab===3&&sc==='m'))?mname(ym):((tab===3&&sc==='a')||(tab===4&&allS)?'All years':fyLabel(yr));
  ['v1','v2','v3','v4'].forEach(function(v,i){$(v).hidden=tab!==i+1;});[1,2,3,4].forEach(function(n){$('t'+n).className=tab===n?'on':'';});
  if(tab===1){var l=srt(S.tx.filter(function(t){return t.date.slice(0,7)===ym;})),s=sums(l);$('pill').textContent=l.length+' entries';
   var h=Object.keys(s).sort().map(function(c){var a=s[c],db=a.e+a.t;return '<div class="card"><h3>'+c+' · '+mname(ym)+'</h3><table class="st"><tr><td>Credits</td><td class="cc">+ '+fm(c,a.c)+'</td></tr><tr><td>Expenses</td><td class="ce">− '+fm(c,a.e)+'</td></tr><tr><td>Transferred</td><td class="ct">− '+fm(c,a.t)+'</td></tr><tr><td>Total debits</td><td>− '+fm(c,db)+'</td></tr><tr><td><b>Net</b></td><td class="'+(a.c-db>=0?'cc':'ce')+'">'+fm(c,a.c-db)+'</td></tr></table></div>';}).join('');
-  $('v1').innerHTML=l.length?h+'<div class="card">'+rows(l)+'</div>':'<div class="card empty">No transactions this month.<br>Tap ＋ to add one.</div>';}
+  $('v1').innerHTML=l.length?'<button class="gh" id="pdfm" style="width:100%;margin-bottom:12px">📄 Export month as PDF</button>'+h+'<div class="card">'+rows(l)+'</div>':'<div class="card empty">No transactions this month.<br>Tap ＋ to add one.</div>';}
  else if(tab===2){var lo=yr+'-04-01',hi=(+yr+1)+'-03-31',all=S.tx.filter(function(t){return t.date>=lo&&t.date<=hi;}),cs=Object.keys(sums(all)).sort(),fl=fyLabel(yr);$('pill').textContent=all.length+' entries';
   var f=function(v){var u=Math.round(v/100);return Math.abs(u)>=1e7?(u/1e7).toFixed(2)+'Cr':u.toLocaleString('en-IN');},fz=function(v,c){return v?'<td class="'+c+'">'+f(v)+'</td>':'<td class="z">\u2013</td>';};
   var h2=cs.map(function(c){var tot={c:0,e:0,t:0},b='';for(var i=0;i<12;i++){var m=(3+i)%12,yy=m>=3?+yr:+yr+1,key=yy+'-'+String(m+1).padStart(2,'0'),a=(sums(all.filter(function(t){return t.cur===c&&t.date.slice(0,7)===key;}))[c])||null;
@@ -129,15 +136,25 @@ function render(){
    b+='<tr><td>'+mshort(m)+' '+String(yy).slice(2)+'</td>'+(a?fz(a.c,'cc')+fz(a.e,'ce')+fz(a.t,'ct')+'<td class="'+(n>=0?'cc':'ce')+'">'+f(n)+'</td>':'<td class="z">\u2013</td><td class="z">\u2013</td><td class="z">\u2013</td><td class="z">\u2013</td>')+'</tr>';}
    var tn=tot.c-tot.e-tot.t;
    return '<div class="card"><h3>'+c+' \u00b7 '+fl+'</h3><div class="yw"><table class="yt"><tr><th>Month</th><th>Cr</th><th>Dr</th><th>Tr</th><th>Net</th></tr>'+b+'<tr class="tot"><td>Total</td><td class="cc">'+f(tot.c)+'</td><td class="ce">'+f(tot.e)+'</td><td class="ct">'+f(tot.t)+'</td><td class="'+(tn>=0?'cc':'ce')+'">'+f(tn)+'</td></tr></table></div><div class="lgd">Cr = Credit &nbsp;\u00b7&nbsp; Dr = Expense &nbsp;\u00b7&nbsp; Tr = Transferred &nbsp;\u00b7&nbsp; Net = Cr \u2212 Dr \u2212 Tr</div></div>';}).join('');
-  $('v2').innerHTML=(h2||'<div class="card empty">No transactions in '+fl+'.</div>')+'<div class="card"><h3>Data</h3><div class="btns"><button class="gh" id="bk">Backup</button><button class="gh" id="rst">Restore</button></div></div>';}
+  $('v2').innerHTML=(all.length?'<button class="gh" id="pdfy" style="width:100%;margin-bottom:12px">📄 Export year as PDF</button>':'')+(h2||'<div class="card empty">No transactions in '+fl+'.</div>')+'<div class="card"><h3>Data</h3><div class="btns"><button class="gh" id="bk">Backup</button><button class="gh" id="rst">Restore</button></div></div>';}
  else if(tab===4){var lo=allS?-1e9:dn(yr+'-04-01'),hi=allS?1e9:dn((+yr+1)+'-03-31'),fa=yr+'-04-01',fb=(+yr+1)+'-03-31',fy=seaDays(lo,hi),fl=allS?'All years':fyLabel(yr);
   var ls=S.sea.filter(function(c){return allS||(c.on<=fb&&(c.off||today())>=fa);}).sort(function(a,b){return a.on<b.on?1:a.on>b.on?-1:0;});$('pill').textContent=ls.length+' contracts';
   var rw=ls.map(function(c){var tot=seaDays(-1e9,1e9,[c]),f=seaDays(lo,hi,[c]);
    return '<tr data-s="'+c.id+'"><td><b>'+esc(c.v||'Sea contract')+'</b><small>'+fd(c.on)+' \u2192 '+(c.off?fd(c.off):'on board')+'</small>'+((c.pon||c.poff)?'<small>'+esc(c.pon||'\u2014')+' \u2192 '+esc(c.poff||'\u2014')+'</small>':'')+'</td><td>'+f+' d'+(f!==tot?'<small>of '+tot+' d total</small>':'')+'</td></tr>';}).join('');
   $('v4').innerHTML='<div class="card sea"><div class="sl">Days out of India</div><div class="big">'+fy+'</div><div class="sl">'+fl+'</div><div class="seg" style="margin:12px 0 10px"><button style="flex:1" data-sv="fy" class="'+(allS?'':'on')+'">By year</button><button style="flex:1" data-sv="all" class="'+(allS?'on':'')+'">All years</button></div><button class="pri" id="rpg" style="width:100%">📄 Report · Print / PDF</button></div>'+(ls.length?'<div class="card"><table class="sl2">'+rw+'</table></div>':'<div class="card empty">No sea service'+(allS?'':' in '+fl)+'.<br>Tap \uff0b to add sign on / sign off dates.</div>');}
- else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;if(!allY&&(t.date<yr+'-04-01'||t.date>(+yr+1)+'-03-31'))return false;
-   var hs=[t.desc,t.cur,t.date,mname(t.date.slice(0,7)),TL[t.type],t.amt.toFixed(2),String(t.amt)].join(' ').toLowerCase();return tk.every(function(k){return hs.indexOf(k)>=0;});})),s3=sums(res);$('pill').textContent=res.length+' found';
-  $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return '<div><b>'+c+'</b> · <span class="cc">+'+fm(c,a.c)+'</span> · <span class="ce">−'+fm(c,a.e)+'</span> · <span class="ct">→'+fm(c,a.t)+'</span></div>';}).join('')+'</div><div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions'+(allY?'':' in '+fyLabel(yr))+'.</div>';}
+ else{var tk=$('q').value.toLowerCase().split(/\s+/).filter(Boolean),lo3=yr+'-04-01',hi3=(+yr+1)+'-03-31';
+  var res=srt(S.tx.filter(function(t){if(flt!=='all'&&t.type!==flt)return false;
+   if(flt==='e'&&sct!=='all'&&(sct==='__'?!!t.cat:t.cat!==sct))return false;
+   if(sc==='m'&&t.date.slice(0,7)!==ym)return false;if(sc==='y'&&(t.date<lo3||t.date>hi3))return false;
+   var hs=[t.desc,t.cur,t.date,mname(t.date.slice(0,7)),TL[t.type],t.cat||'',t.sub||'',t.amt.toFixed(2),String(t.amt)].join(' ').toLowerCase();return tk.every(function(k){return hs.indexOf(k)>=0;});})),s3=sums(res);$('pill').textContent=res.length+' found';
+  [].forEach.call($('fl').children,function(x){x.className=x.dataset.f===flt?'on':'';});
+  [].forEach.call($('fs').children,function(x){x.className=x.dataset.sc===sc?'on':'';});
+  $('fc').style.display=flt==='e'?'':'none';
+  if(flt==='e'){var cn=['all'].concat(Object.keys(CATS),['__']),cl={all:'All categories','__':'Uncategorized'};$('fc').innerHTML=cn.map(function(k){return '<button data-ct="'+k+'" class="'+(k===sct?'on':'')+'">'+esc(cl[k]||k)+'</button>';}).join('');}
+  var bd='';
+  if(flt==='e'&&res.length){var gc=sct==='all',by={};res.forEach(function(t){var k=gc?(t.cat||'Uncategorized'):(t.sub||'No sub-category'),b=by[t.cur]||(by[t.cur]={});b[k]=(b[k]||0)+Math.round(t.amt*100);});
+   bd=Object.keys(by).sort().map(function(c){var b=by[c],ks=Object.keys(b).sort(function(x,y){return b[y]-b[x];});return '<div class="card"><h3>'+c+' \u00b7 '+(gc?'By category':esc(sct==='__'?'Uncategorized':sct)+' \u2013 by sub-category')+'</h3><table class="st">'+ks.map(function(k){return '<tr><td>'+esc(k)+'</td><td class="ce">'+fm(c,b[k])+'</td></tr>';}).join('')+'</table></div>';}).join('');}
+  $('sr').innerHTML=res.length?'<div class="card">'+Object.keys(s3).sort().map(function(c){var a=s3[c];return flt==='e'?'<div><b>'+c+'</b> \u00b7 Total expenses <span class="ce">\u2212'+fm(c,a.e)+'</span></div>':'<div><b>'+c+'</b> \u00b7 <span class="cc">+'+fm(c,a.c)+'</span> \u00b7 <span class="ce">\u2212'+fm(c,a.e)+'</span> \u00b7 <span class="ct">\u2192'+fm(c,a.t)+'</span></div>';}).join('')+'</div>'+bd+'<div class="card">'+rows(res.slice(0,300))+'</div>':'<div class="card empty">No matching transactions'+(sc==='y'?' in '+fyLabel(yr):sc==='m'?' in '+mname(ym):'')+'.</div>';}
 }
 function dn(s){return Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/864e5;}
 function fd(s){return new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});}
@@ -156,22 +173,40 @@ function report(a,b,lab){var lo=dn(a),hi=dn(b),ls=S.sea.filter(function(c){retur
  var rows=ls.map(function(c,i){var d=seaDays(lo,hi,[c]),full=seaDays(-1e9,1e9,[c]);if(d!==full)clip=true;if(!c.off)ong=true;
   return '<tr><td>'+(i+1)+'</td><td>'+esc(c.v||'\u2014')+'</td><td class="dt">'+fd(c.on)+'</td><td>'+esc(c.pon||'\u2014')+'</td><td class="dt">'+(c.off?fd(c.off):'On board')+'</td><td>'+esc(c.poff||'\u2014')+'</td><td class="r">'+d+(d!==full?'*':'')+'</td></tr>';}).join('');
  var tot=seaDays(lo,hi,ls);
- $('rpb').innerHTML='<h2>SEA SERVICE RECORD</h2><div class="rpm">'+(lab?'<b>'+lab+'</b> &nbsp;\u00b7&nbsp; ':'')+fd(a)+' to '+fd(b)+'</div>'+(ls.length?'<div class="rw"><table class="rpt"><tr><th>#</th><th>Vessel</th><th class="dt">Sign on</th><th>Place</th><th class="dt">Sign off</th><th>Place</th><th class="r">Days</th></tr>'+rows+'<tr class="tt"><td colspan="6">Total days out of India</td><td class="r">'+tot+'</td></tr></table></div>':'<p style="text-align:center">No sea service in this period.</p>')
+ $('rpb').innerHTML='<h2>SEA SERVICE RECORD</h2><div class="rpm">'+(lab?'<b>'+lab+'</b> &nbsp;\u00b7&nbsp; ':'')+fd(a)+' to '+fd(b)+'</div>'+(ls.length?'<div class="rw"><table class="rpt sn"><tr><th>#</th><th>Vessel</th><th class="dt">Sign on</th><th>Place</th><th class="dt">Sign off</th><th>Place</th><th class="r">Days</th></tr>'+rows+'<tr class="tt"><td colspan="6">Total days out of India</td><td class="r">'+tot+'</td></tr></table></div>':'<p style="text-align:center">No sea service in this period.</p>')
   +'<div class="rpn">Days = days between sign on and sign off; the sign-on and sign-off days are not counted.'+(clip?'<br>* Days counted only within the selected period.':'')+(ong?'<br>On board: counted up to '+fd(today())+'.':'')+'<br>Generated on '+fd(today())+'.</div>';
  $('rp').hidden=false;document.body.classList.add('rpo');$('rp').scrollTop=0;}
+function n2(v){return (v/100).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function showR(h){$('rpb').innerHTML=h;$('rp').hidden=false;document.body.classList.add('rpo');$('rp').scrollTop=0;}
+function catTable(l){var o={},tt=0;l.forEach(function(t){if(t.type!=='e')return;var k=t.cat||'Uncategorized',v=Math.round(t.amt*100);o[k]=(o[k]||0)+v;tt+=v;});var ks=Object.keys(o).sort(function(a,b){return o[b]-o[a];});if(!ks.length)return '';
+ return '<h4>Expenses by category</h4><table class="rpt"><thead><tr><th>Category</th><th class="r">Amount</th><th class="r">%</th></tr></thead><tbody>'+ks.map(function(k){return '<tr><td>'+esc(k)+'</td><td class="r">'+n2(o[k])+'</td><td class="r">'+(Math.round(o[k]*1000/tt)/10).toFixed(1)+'</td></tr>';}).join('')+'<tr class="tt"><td>Total expenses</td><td class="r">'+n2(tt)+'</td><td class="r">100.0</td></tr></tbody></table>';}
+function monthReport(){var l=S.tx.filter(function(t){return t.date.slice(0,7)===ym;}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:(a.id<b.id?-1:1);}),s=sums(l),h='<h2>MONEY DIARY</h2><div class="rpm"><b>'+mname(ym)+'</b></div>';
+ Object.keys(s).sort().forEach(function(c){var a=s[c],db=a.e+a.t,lc=l.filter(function(t){return t.cur===c;});
+  h+='<h4>'+esc(c)+' \u00b7 Summary</h4><table class="rpt"><tbody><tr><td>Credits</td><td class="r">'+n2(a.c)+'</td></tr><tr><td>Expenses</td><td class="r">'+n2(a.e)+'</td></tr><tr><td>Transferred</td><td class="r">'+n2(a.t)+'</td></tr><tr><td>Total debits</td><td class="r">'+n2(db)+'</td></tr><tr class="tt"><td>Net</td><td class="r">'+n2(a.c-db)+'</td></tr></tbody></table>'+catTable(lc)
+  +'<h4>Transactions</h4><table class="rpt"><thead><tr><th class="dt">Date</th><th>Description</th><th>Category</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody>'+lc.map(function(t){var v=n2(Math.round(t.amt*100));return '<tr><td class="dt">'+fd(t.date)+'</td><td>'+(esc(t.desc)||'\u2014')+(t.type==='t'?' <i>(Transferred)</i>':'')+'</td><td>'+(t.type==='e'?esc(t.cat||'\u2014')+(t.sub?' / '+esc(t.sub):''):'')+'</td><td class="r">'+(t.type==='c'?'':v)+'</td><td class="r">'+(t.type==='c'?v:'')+'</td></tr>';}).join('')+'<tr class="tt"><td colspan="3">Total</td><td class="r">'+n2(db)+'</td><td class="r">'+n2(a.c)+'</td></tr></tbody></table>';});
+ showR(h+'<div class="rpn">Generated on '+fd(today())+'.</div>');}
+function yearReport(){var lo=yr+'-04-01',hi=(+yr+1)+'-03-31',all=S.tx.filter(function(t){return t.date>=lo&&t.date<=hi;}),cs=Object.keys(sums(all)).sort(),h='<h2>MONEY DIARY</h2><div class="rpm"><b>'+fyLabel(yr)+'</b> \u00b7 1 Apr '+yr+' to 31 Mar '+(+yr+1)+'</div>',D='<td class="r">\u2013</td>';
+ cs.forEach(function(c){var lc=all.filter(function(t){return t.cur===c;}),tot={c:0,e:0,t:0},b='';
+  for(var i=0;i<12;i++){var m=(3+i)%12,yy=m>=3?+yr:+yr+1,key=yy+'-'+String(m+1).padStart(2,'0'),a=sums(lc.filter(function(t){return t.date.slice(0,7)===key;}))[c]||null;
+   if(a){tot.c+=a.c;tot.e+=a.e;tot.t+=a.t;}
+   b+='<tr><td class="dt">'+mshort(m)+' '+String(yy).slice(2)+'</td>'+(a?'<td class="r">'+n2(a.c)+'</td><td class="r">'+n2(a.e)+'</td><td class="r">'+n2(a.t)+'</td><td class="r">'+n2(a.c-a.e-a.t)+'</td>':D+D+D+D)+'</tr>';}
+  h+='<h4>'+esc(c)+' \u00b7 Monthly summary</h4><table class="rpt"><thead><tr><th>Month</th><th class="r">Credit</th><th class="r">Expense</th><th class="r">Transferred</th><th class="r">Net</th></tr></thead><tbody>'+b+'<tr class="tt"><td>Total</td><td class="r">'+n2(tot.c)+'</td><td class="r">'+n2(tot.e)+'</td><td class="r">'+n2(tot.t)+'</td><td class="r">'+n2(tot.c-tot.e-tot.t)+'</td></tr></tbody></table>'+catTable(lc);});
+ showR(h+'<div class="rpn">Net = Credit \u2212 Expense \u2212 Transferred.<br>Generated on '+fd(today())+'.</div>');}
 function closeR(){$('rp').hidden=true;document.body.classList.remove('rpo');}
 function openM(h){$('mb').innerHTML=h;$('md').hidden=false;}function closeM(){$('md').hidden=true;$('mb').innerHTML='';}
+function subsFor(c){var o=(CATS[c]||[]).slice();S.tx.forEach(function(t){if(t.cat===c&&t.sub&&o.indexOf(t.sub)<0)o.push(t.sub);});return o;}
+function subOpts(c){return subsFor(c).map(function(x){return '<option value="'+esc(x)+'">';}).join('');}
 function form(id){var t=id?find(id):null;eid=id||null;ft=t?t.type:'e';
- openM('<h3>'+(t?'Edit':'New')+' transaction</h3><div class="seg" id="seg"><button data-ty="c">Credit</button><button data-ty="e">Debit · Expense</button><button data-ty="t">Debit · Transferred</button></div><input id="fa" inputmode="decimal" placeholder="Amount" value="'+(t?t.amt:'')+'"><input id="fc" list="curs" placeholder="Currency (e.g. INR, USD)" maxlength="5" value="'+esc(t?t.cur:S.last)+'"><datalist id="curs">'+CUR.map(function(c){return '<option value="'+c+'">';}).join('')+'</datalist><input id="fd" type="date" value="'+(t?t.date:today())+'"><input id="fn" placeholder="Description (optional)" maxlength="120" value="'+esc(t?t.desc:'')+'"><div class="mbt"><button class="pri" data-a="save">Save</button>'+(t?'<button class="gh" data-a="del">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');segUp();}
-function segUp(){[].forEach.call(document.querySelectorAll('#seg button'),function(b){b.className=b.dataset.ty===ft?'on':'';});}
+ openM('<h3>'+(t?'Edit':'New')+' transaction</h3><div class="seg" id="seg"><button data-ty="c">Credit</button><button data-ty="e">Debit · Expense</button><button data-ty="t">Debit · Transferred</button></div><div id="cr"><label class="lb">Category</label><select id="fcat"><option value="">Select category</option>'+Object.keys(CATS).map(function(k){return '<option'+(t&&t.cat===k?' selected':'')+'>'+k+'</option>';}).join('')+'</select><label class="lb">Sub-category (pick one or type your own)</label><input id="fsub" list="subs" placeholder="e.g. Groceries" maxlength="40" value="'+esc(t?t.sub||'':'')+'"><datalist id="subs">'+subOpts(t?t.cat:'')+'</datalist></div><input id="fa" inputmode="decimal" placeholder="Amount" value="'+(t?t.amt:'')+'"><input id="fc" list="curs" placeholder="Currency (e.g. INR, USD)" maxlength="5" value="'+esc(t?t.cur:S.last)+'"><datalist id="curs">'+CUR.map(function(c){return '<option value="'+c+'">';}).join('')+'</datalist><input id="fd" type="date" value="'+(t?t.date:today())+'"><input id="fn" placeholder="Description (optional)" maxlength="120" value="'+esc(t?t.desc:'')+'"><div class="mbt"><button class="pri" data-a="save">Save</button>'+(t?'<button class="gh" data-a="del">Delete</button>':'')+'<button class="gh" data-a="x">Cancel</button></div>');segUp();}
+function segUp(){[].forEach.call(document.querySelectorAll('#seg button'),function(b){b.className=b.dataset.ty===ft?'on':'';});var cr=$('cr');if(cr)cr.style.display=ft==='e'?'':'none';}
 function offer(){openM('<h3>Backup ready</h3><p>'+S.tx.length+' transactions, '+S.sea.length+' sea contracts. Choose how to save it.</p><div class="mbt"><button class="pri" data-a="sh">📤 Share / Save to Drive</button><button class="gh" data-a="dl">⬇ Download</button><button class="gh" data-a="x">Close</button></div>');pf={s:JSON.stringify(S),n:'SKJ_Money_Backup_'+today()+'.json'};}
 function note(t){var p=document.querySelector('#mb p');if(p){p.textContent=t;p.style.color='var(--cr)';}}
 $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=b.dataset.a;
  if(b.dataset.ty){ft=b.dataset.ty;segUp();return;}
  if(a==='x')closeM();
  else if(a==='save'){var amt=parseFloat(String($('fa').value).replace(/,/g,''));if(!(amt>0)){alert('Enter a valid amount.');return;}
-  var cur=($('fc').value||'').trim().toUpperCase()||S.last,d=$('fd').value||today(),t=eid?find(eid):null;
-  if(t){t.amt=amt;t.cur=cur;t.date=d;t.type=ft;t.desc=$('fn').value.trim();}else S.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),amt:amt,cur:cur,date:d,type:ft,desc:$('fn').value.trim()});
+  var cur=($('fc').value||'').trim().toUpperCase()||S.last,d=$('fd').value||today(),t=eid?find(eid):null,cat=ft==='e'?$('fcat').value:'',sub=ft==='e'?$('fsub').value.trim():'';
+  if(t){t.amt=amt;t.cur=cur;t.date=d;t.type=ft;t.desc=$('fn').value.trim();t.cat=cat;t.sub=sub;}else S.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),amt:amt,cur:cur,date:d,type:ft,desc:$('fn').value.trim(),cat:cat,sub:sub});
   S.last=cur;save();ym=d.slice(0,7);yr=fyOf(d);closeM();render();}
  else if(a==='ssave'){var on=$('so').value,off=$('sf').value;if(!on){alert('Enter the sign on date.');return;}if(off&&off<on){alert('Sign off cannot be before sign on.');return;}
   var v=$('sv').value.trim(),po=$('sop').value.trim(),pq=$('sfp').value.trim(),c=sid?S.sea.filter(function(x){return x.id===sid;})[0]:null;if(c){c.on=on;c.off=off;c.v=v;c.pon=po;c.poff=pq;}else S.sea.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),on:on,off:off,v:v,pon:po,poff:pq});
@@ -183,13 +218,16 @@ $('mb').onclick=function(e){var b=e.target.closest('button');if(!b)return;var a=
  else if(a==='dl'){var l=document.createElement('a');l.href=URL.createObjectURL(new Blob([pf.s],{type:'application/json'}));l.download=pf.n;document.body.appendChild(l);l.click();document.body.removeChild(l);note('Downloaded ✓ Check your Downloads folder for '+pf.n);}};
 $('md').onclick=function(e){if(e.target===$('md'))closeM();};
 $('rpx').onclick=closeR;$('rpp').onclick=function(){window.print();};
-['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){var id=e.target.id;if(id==='so'||id==='sf')seaPrev();else if(id==='rps'&&e.target.value!=='custom'){var r=rpRange(e.target.value);$('rpa').value=r[0];$('rpb2').value=r[1];}else if(id==='rpa'||id==='rpb2')$('rps').value='custom';});});
-function shift(n){if(tab===3&&allY)return;if(tab===4&&allS)allS=false;if(tab>=2)yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
+['input','change'].forEach(function(ev){$('mb').addEventListener(ev,function(e){var id=e.target.id;if(id==='so'||id==='sf')seaPrev();else if(id==='rps'&&e.target.value!=='custom'){var r=rpRange(e.target.value);$('rpa').value=r[0];$('rpb2').value=r[1];}else if(id==='rpa'||id==='rpb2')$('rps').value='custom';else if(id==='fcat'){$('subs').innerHTML=subOpts(e.target.value);$('fsub').value='';}});});
+function shift(n){if(tab===3&&sc==='a')sc='y';if(tab===4&&allS)allS=false;if(!(tab===1||(tab===3&&sc==='m')))yr=String(+yr+n);else{var y=+ym.slice(0,4),m=+ym.slice(5)-1+n;ym=iso(new Date(y,m,1)).slice(0,7);}render();}
 $('prev').onclick=function(){shift(-1);};$('next').onclick=function(){shift(1);};$('fab').onclick=function(){if(tab===4)seaForm(null);else form(null);};
 [1,2,3,4].forEach(function(n){$('t'+n).onclick=function(){tab=n;render();window.scrollTo(0,0);};});
-$('q').oninput=render;$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.ay)allY=!allY;else flt=b.dataset.f;[].forEach.call($('fl').children,function(x){x.className=x.dataset.ay?(allY?'on':''):(x.dataset.f===flt?'on':'');});render();};
+$('q').oninput=render;
+$('fl').onclick=function(e){var b=e.target.closest('button');if(!b)return;flt=b.dataset.f;if(flt!=='e')sct='all';render();};
+$('fc').onclick=function(e){var b=e.target.closest('button');if(!b)return;sct=b.dataset.ct;render();};
+$('fs').onclick=function(e){var b=e.target.closest('button');if(!b)return;var n=b.dataset.sc;if(n==='y'&&sc==='m')yr=fyOf(ym+'-01');if(n==='m'&&sc!=='m'&&fyOf(ym+'-01')!==yr)ym=yr+'-04';sc=n;render();};
 document.body.addEventListener('click',function(e){var sv=e.target.closest('button[data-sv]');if(sv){allS=sv.dataset.sv==='all';render();return;}var tr=e.target.closest('tr[data-i]');if(tr)form(tr.dataset.i);var sr=e.target.closest('tr[data-s]');if(sr)seaForm(sr.dataset.s);
- if(e.target.id==='rpg')reportForm();if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
+ if(e.target.id==='rpg')reportForm();if(e.target.id==='pdfm')monthReport();if(e.target.id==='pdfy')yearReport();if(e.target.id==='bk')offer();if(e.target.id==='rst'){$('rf').value='';$('rf').click();}});
 $('rf').onchange=function(){var f=this.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result),h={};S.tx.forEach(function(t){h[t.id]=1;});var n=0;(o.tx||[]).forEach(function(t){if(!h[t.id]){S.tx.push(t);n++;}});var hs={};S.sea.forEach(function(t){hs[t.id]=1;});(o.sea||[]).forEach(function(t){if(!hs[t.id]){S.sea.push(t);n++;}});save();render();alert('Restored '+n+' new entries.');}catch(e){alert('That is not a valid backup file.');}};fr.readAsText(f);};
 (function(){var sx=0,sy=0,h=document.querySelector('.hdr');h.addEventListener('touchstart',function(e){var t=e.changedTouches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
  h.addEventListener('touchend',function(e){var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>45&&Math.abs(dx)>1.5*Math.abs(dy))shift(dx<0?1:-1);},{passive:true});})();
